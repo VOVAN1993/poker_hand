@@ -86,12 +86,26 @@ func (h *hander) parseTournaments(ctx context.Context) error {
 	for i := 0; i < 10; i++ {
 		fmt.Println(tournaments[i])
 	}
-	fmt.Println(len(tournaments), totalBI, totalPrize)
+	newTournaments := 0
+	for _, t := range tournaments {
+		ok, err := h.ps.SaveTournaments(ctx, castTournament(t))
+		if err != nil {
+			return err
+		}
+		if ok {
+			newTournaments++
+		}
+	}
+	fmt.Printf("Saved %d tournamets\n", newTournaments)
 	return nil
 }
 
 func (h *hander) Start(ctx context.Context) error {
 	if err := h.ps.Start(ctx); err != nil {
+		return err
+	}
+
+	if err := h.ps.CreateTournamentsTable(ctx); err != nil {
 		return err
 	}
 	return h.parseTournaments(ctx)
