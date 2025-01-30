@@ -19,6 +19,9 @@ type (
 	HandManager interface {
 		Start(ctx context.Context) error
 		Stop()
+
+		ListTournaments(ctx context.Context) ([]poker.Tournament, error)
+		GetTournament(ctx context.Context, id string) (poker.Tournament, error)
 	}
 	hander struct {
 		ps persistent.Persistent
@@ -88,7 +91,7 @@ func (h *hander) parseTournaments(ctx context.Context) error {
 	}
 	newTournaments := 0
 	for _, t := range tournaments {
-		ok, err := h.ps.SaveTournaments(ctx, castTournament(t))
+		ok, err := h.ps.SaveTournaments(ctx, castTournamentToDB(t))
 		if err != nil {
 			return err
 		}

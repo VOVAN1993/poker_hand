@@ -23,6 +23,7 @@ type (
 		CreateTournamentsTable(ctx context.Context) error
 
 		SaveTournaments(ctx context.Context, t Tournament) (bool, error)
+		ListTournaments(ctx context.Context, whereOpts ...WhereOpt) ([]Tournament, error)
 	}
 )
 
@@ -52,6 +53,34 @@ func (db *db) Start(ctx context.Context) error {
 
 func (db *db) Stop() {
 	db.closeFunc()
+}
+
+func (db *db) ListTournaments(ctx context.Context, whereOpts ...WhereOpt) ([]Tournament, error) {
+	query := `
+		SELECT * FROM tournaments
+	`
+	where := constructsOption(whereOpts...)
+	if where.ID != nil {
+		query += fmt.Sprintf(" WHERE id = '%s'", *where.ID)
+	}
+	rows, err := db.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	var tournamets []Tournament
+	for rows.Next() {
+		var t Tournament
+		if err := rows.Scan(&t.ID, &t.BI, &t.Players, &t.TotalPrizePool,
+			&t.Started, &t.MyPlace, &t.MyPrize, &t.Reentries, &t.Name, &t.Type); err != nil {
+			return nil, err
+		}
+		tournamets = append(tournamets, t)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return tournamets, nil
 }
 
 func (db *db) SaveTournaments(ctx context.Context, t Tournament) (bool, error) {
