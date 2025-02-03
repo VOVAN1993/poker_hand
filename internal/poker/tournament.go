@@ -22,6 +22,7 @@ type (
 		Reentries      int
 		Name           string
 		Type           TournamentType
+		Free           bool
 	}
 	TournamentType string
 )

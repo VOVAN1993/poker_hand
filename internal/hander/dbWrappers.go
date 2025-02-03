@@ -17,6 +17,7 @@ func castTournamentToDB(t *poker.Tournament) persistent.Tournament {
 		Reentries:      t.Reentries,
 		Name:           t.Name,
 		Type:           string(t.Type),
+		Free:           t.Free,
 	}
 }
 
@@ -32,5 +33,6 @@ func castTournamentFromDB(t *persistent.Tournament) poker.Tournament {
 		Reentries:      t.Reentries,
 		Name:           t.Name,
 		Type:           poker.TournamentType(t.Type),
+		Free:           t.Free,
 	}
 }

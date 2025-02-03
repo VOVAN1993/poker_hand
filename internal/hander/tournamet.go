@@ -33,3 +33,14 @@ func (h *hander) ListTournaments(ctx context.Context) ([]poker.Tournament, error
 	}
 	return res, nil
 }
+
+func (h *hander) FreeTournament(ctx context.Context, id string) error {
+	ok, err := h.ps.FreeTournament(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("not found tournament #%s", id)
+	}
+	return nil
+}

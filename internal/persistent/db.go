@@ -6,7 +6,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -22,6 +21,7 @@ type (
 
 		CreateTournamentsTable(ctx context.Context) error
 
+		FreeTournament(ctx context.Context, id string) (bool, error)
 		SaveTournaments(ctx context.Context, t Tournament) (bool, error)
 		ListTournaments(ctx context.Context, whereOpts ...WhereOpt) ([]Tournament, error)
 	}
@@ -72,7 +72,7 @@ func (db *db) ListTournaments(ctx context.Context, whereOpts ...WhereOpt) ([]Tou
 	for rows.Next() {
 		var t Tournament
 		if err := rows.Scan(&t.ID, &t.BI, &t.Players, &t.TotalPrizePool,
-			&t.Started, &t.MyPlace, &t.MyPrize, &t.Reentries, &t.Name, &t.Type); err != nil {
+			&t.Started, &t.MyPlace, &t.MyPrize, &t.Reentries, &t.Name, &t.Type, &t.Free); err != nil {
 			return nil, err
 		}
 		tournamets = append(tournamets, t)
@@ -81,6 +81,18 @@ func (db *db) ListTournaments(ctx context.Context, whereOpts ...WhereOpt) ([]Tou
 		return nil, err
 	}
 	return tournamets, nil
+}
+
+func (db *db) FreeTournament(ctx context.Context, id string) (bool, error) {
+	query := `
+	UPDATE tournaments SET free=$1
+		WHERE id = $2;
+	;`
+	st, err := db.pool.Exec(ctx, query, true, id)
+	if err != nil {
+		return false, fmt.Errorf("cannot update tournament item: %w", err)
+	}
+	return st.RowsAffected() == 1, nil
 }
 
 func (db *db) SaveTournaments(ctx context.Context, t Tournament) (bool, error) {
@@ -122,7 +134,8 @@ func (db *db) CreateTournamentsTable(ctx context.Context) error {
 		my_prize FLOAT4 NOT NULL,
 		reentries INT NOT NULL,
 		name TEXT NOT NULL,
-		type TEXT NOT NULL
+		type TEXT NOT NULL,
+		free BOOLEAN NOT NULL DEFAULT FALSE
 	);`
 
 	_, err := db.pool.Exec(ctx, q)
@@ -130,39 +143,5 @@ func (db *db) CreateTournamentsTable(ctx context.Context) error {
 		return fmt.Errorf("failed to create tournaments table: %w", err)
 	}
 
-	return nil
-}
-func (db *db) Tst(ctx context.Context) error {
-	pswd := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	urlExample := fmt.Sprintf("postgres://postgres:%s@host.docker.internal:5433/%s", pswd, dbName)
-	dbpool, err := pgxpool.New(ctx, os.Getenv(urlExample))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
-		return err
-	}
-	defer dbpool.Close()
-
-	conn, err := pgx.Connect(ctx, urlExample)
-	if err != nil {
-		return err
-	}
-	defer conn.Close(context.Background())
-
-	rows, err := conn.Query(context.Background(), "select id from users")
-	if err != nil {
-		return err
-	}
-
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return err
-		}
-		fmt.Println(name)
-	}
-	if err = rows.Err(); err != nil {
-		return err
-	}
 	return nil
 }

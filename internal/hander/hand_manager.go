@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/VOVAN1993/poker_hand/internal/persistent"
@@ -22,6 +21,7 @@ type (
 
 		ListTournaments(ctx context.Context) ([]poker.Tournament, error)
 		GetTournament(ctx context.Context, id string) (poker.Tournament, error)
+		FreeTournament(ctx context.Context, id string) error
 	}
 	hander struct {
 		ps persistent.Persistent
@@ -76,18 +76,6 @@ func (h *hander) parseTournaments(ctx context.Context) error {
 	})
 	if err != nil {
 		fmt.Println(err)
-	}
-	var totalBI float32
-	var totalPrize float32
-	sort.Slice(tournaments, func(i, j int) bool {
-		return tournaments[i].BI > tournaments[j].BI
-	})
-	for _, t := range tournaments {
-		totalBI += t.BI
-		totalPrize += t.MyPrize
-	}
-	for i := 0; i < 10; i++ {
-		fmt.Println(tournaments[i])
 	}
 	newTournaments := 0
 	for _, t := range tournaments {

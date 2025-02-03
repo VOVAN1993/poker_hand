@@ -14,5 +14,6 @@ type (
 		Reentries      int
 		Name           string
 		Type           string
+		Free           bool
 	}
 )
